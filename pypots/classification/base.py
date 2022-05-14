@@ -10,6 +10,7 @@ from abc import abstractmethod
 
 import numpy as np
 import torch
+import wandb
 
 from pypots.base import BaseModel, BaseNNModel
 
@@ -65,6 +66,7 @@ class BaseNNClassifier(BaseNNModel, BaseClassifier):
                  device):
         super().__init__(learning_rate, epochs, patience, batch_size, weight_decay, device)
         self.n_classes = n_classes
+        self.checkpoints = 0
 
     @abstractmethod
     def assemble_input_data(self, data):
@@ -106,15 +108,36 @@ class BaseNNClassifier(BaseNNModel, BaseClassifier):
                     mean_val_loss = np.mean(epoch_val_loss_collector)
                     self.logger['validating_loss'].append(mean_val_loss)
                     print(f'epoch {epoch}: training loss {mean_train_loss:.4f}, validating loss {mean_val_loss:.4f}')
+                    wandb.log({
+                        "epoch": epoch,
+                        "training_loss": mean_train_loss,
+                        "validating_loss": mean_val_loss
+                    })
                     mean_loss = mean_val_loss
                 else:
                     print(f'epoch {epoch}: training loss {mean_train_loss:.4f}')
+                    wandb.log({
+                        "epoch": epoch,
+                        "training_loss": mean_train_loss,
+                    })
                     mean_loss = mean_train_loss
 
                 if mean_loss < self.best_loss:
                     self.best_loss = mean_loss
                     self.best_model_dict = self.model.state_dict()
                     self.patience = self.original_patience
+
+                    filename = "checkpointcls." + str(self.checkpoints)
+                    torch.save({
+                        'epoch': epoch,
+                        'model_state_dict': self.model.state_dict(),
+                        'optimizer_state_dict': self.optimizer.state_dict(),
+                        'loss': mean_train_loss,
+                    }, filename)
+                    artifact = wandb.Artifact('model', type="model")
+                    artifact.add_file(filename)
+                    wandb.log_artifact(artifact)
+                    self.checkpoints += 1
                 else:
                     self.patience -= 1
                     if self.patience == 0:
