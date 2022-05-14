@@ -136,7 +136,7 @@ class BaseNNImputer(BaseNNModel, BaseImputer):
                                'Model will load the best parameters so far for testing. '
                                "If you don't want it, please try fit() again.")
 
-        if np.equal(self.best_loss, float('inf')):
+        if np.equal(self.best_loss.cpu(), float('inf')):
             raise ValueError('Something is wrong. best_loss is Nan after training.')
 
         print('Finished training.')
