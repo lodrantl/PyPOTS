@@ -9,6 +9,7 @@ from abc import abstractmethod
 
 import numpy as np
 import torch
+import wandb
 
 from pypots.base import BaseModel, BaseNNModel
 from pypots.utils.metrics import cal_mae
@@ -102,9 +103,18 @@ class BaseNNImputer(BaseNNModel, BaseImputer):
 
                     mean_val_loss = cal_mae(imputation_collector, val_X_intact, val_indicating_mask)
                     self.logger['validating_loss'].append(mean_val_loss)
+                    wandb.log({
+                        "epoch": epoch,
+                        "training_loss": mean_train_loss,
+                        "validating_loss": mean_val_loss
+                    })
                     print(f'epoch {epoch}: training loss {mean_train_loss:.4f}, validating loss {mean_val_loss:.4f}')
                     mean_loss = mean_val_loss
                 else:
+                    wandb.log({
+                        "epoch": epoch,
+                        "training_loss": mean_train_loss,
+                    })
                     print(f'epoch {epoch}: training loss {mean_train_loss:.4f}')
                     mean_loss = mean_train_loss
 
