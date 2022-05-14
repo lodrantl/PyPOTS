@@ -321,7 +321,7 @@ class VaDER(BaseNNClusterer):
     def fit(self, train_X):
         train_X = self.check_input(self.n_steps, self.n_features, train_X)
         training_set = DatasetForGRUD(train_X)
-        training_loader = DataLoader(training_set, batch_size=self.batch_size, shuffle=True)
+        training_loader = DataLoader(training_set, batch_size=self.batch_size, shuffle=True, generator=torch.Generator("cuda"))
         self._train_model(training_loader)
         self.model.load_state_dict(self.best_model_dict)
         self.model.eval()  # set the model as eval status to freeze it.

@@ -173,13 +173,13 @@ class BRITS(BaseNNClassifier):
         val_X, val_y = self.check_input(self.n_steps, self.n_features, val_X, val_y)
 
         training_set = DatasetForBRITS(train_X, train_y)  # time_gaps is necessary for BRITS
-        training_loader = DataLoader(training_set, batch_size=self.batch_size, shuffle=True)
+        training_loader = DataLoader(training_set, batch_size=self.batch_size, shuffle=True, generator=torch.Generator("cuda"))
 
         if val_X is None:
             self._train_model(training_loader)
         else:
             val_set = DatasetForBRITS(val_X, val_y)
-            val_loader = DataLoader(val_set, batch_size=self.batch_size, shuffle=False)
+            val_loader = DataLoader(val_set, batch_size=self.batch_size, shuffle=False, generator=torch.Generator("cuda"))
             self._train_model(training_loader, val_loader)
 
         self.model.load_state_dict(self.best_model_dict)
