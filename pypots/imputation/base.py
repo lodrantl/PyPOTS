@@ -60,6 +60,7 @@ class BaseImputer(BaseModel):
 class BaseNNImputer(BaseNNModel, BaseImputer):
     def __init__(self, learning_rate, epochs, patience, batch_size, weight_decay, device):
         super().__init__(learning_rate, epochs, patience, batch_size, weight_decay, device)
+        self.checkpoints = 0
 
     @abstractmethod
     def assemble_input_data(self, data):
@@ -122,6 +123,17 @@ class BaseNNImputer(BaseNNModel, BaseImputer):
                     self.best_loss = mean_loss
                     self.best_model_dict = self.model.state_dict()
                     self.patience = self.original_patience
+                    filename = "checkpoint." + str(self.checkpoints)
+                    torch.save({
+                        'epoch': epoch,
+                        'model_state_dict': self.model.state_dict(),
+                        'optimizer_state_dict': self.optimizer.state_dict(),
+                        'loss': mean_train_loss,
+                    }, filename)
+                    artifact = wandb.Artifact('model', type="model")
+                    artifact.add_file(filename)
+                    wandb.log_artifact(artifact)
+                    self.checkpoints += 1
                 else:
                     self.patience -= 1
                     if self.patience == 0:
